@@ -1,4 +1,4 @@
-package com.helpme.tickets.model;
+package com.helpme.tickets.model.dto;
 
 import lombok.Data;
 
@@ -8,6 +8,5 @@ import java.util.UUID;
 public class CreateTicketDTO {
     private String title;
     private String description;
-    private String userId;
     private UUID categoryId;
 }

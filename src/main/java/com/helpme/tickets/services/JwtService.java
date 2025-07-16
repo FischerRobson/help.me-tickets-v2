@@ -48,6 +48,10 @@ public class JwtService {
         return decodeToken(token).getClaim("role").asString();
     }
 
+    public String extractSessionId(String token) {
+        return decodeToken(token).getClaim("sessionId").asString();
+    }
+
     private DecodedJWT decodeToken(String token) {
         return JWT.require(getAlgorithm())
                 .withIssuer("helpme-auth")

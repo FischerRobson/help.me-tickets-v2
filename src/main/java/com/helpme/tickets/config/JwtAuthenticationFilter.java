@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,9 +34,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        logger.info("JwtAuthenticationFilter triggered");
-        logger.info(jwtService.getSecret());
-
         String token = extractJwtFromCookies(request);
 
         if (token == null || !jwtService.isTokenValid(token)) {
@@ -47,6 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String userId = jwtService.extractUserId(token);
         String role = jwtService.extractRole(token);
+        String sessionId = jwtService.extractSessionId(token);
         logger.info("Authenticated user: {} with role {}", userId, role);
 
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
@@ -57,6 +56,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        MDC.put("userId", userId);
+        MDC.put("traceId", sessionId);
 
         filterChain.doFilter(request, response);
     }

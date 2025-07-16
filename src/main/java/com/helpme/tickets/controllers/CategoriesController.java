@@ -30,12 +30,5 @@ public class CategoriesController {
         return ResponseEntity.ok(categories);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Category> getCategoryById(@PathVariable UUID id) {
-        return categoriesService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
     public record CreateCategoryRequest(String name) {}
 }
