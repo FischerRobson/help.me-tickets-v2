@@ -16,7 +16,7 @@ public class TicketListItem {
     private Instant createdAt;
     private Instant updatedAt;
     private TicketStatus ticketStatus;
-    private String userId;
-    private String supportId;
+    private UUID userId;
+    private UUID supportId;
     private Category category;
 }

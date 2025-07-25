@@ -5,15 +5,22 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class CurrentUserService {
 
-    public String getUserId() {
+    public UUID getUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof String)) {
+        if (auth == null || !(auth.getPrincipal() instanceof String principal)) {
             throw new IllegalStateException("No authenticated user");
         }
-        return (String) auth.getPrincipal();
+
+        try {
+            return UUID.fromString(principal);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Authenticated principal is not a valid UUID: " + principal, e);
+        }
     }
 
     public String getRole() {

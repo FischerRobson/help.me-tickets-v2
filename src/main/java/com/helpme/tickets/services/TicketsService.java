@@ -1,14 +1,18 @@
 package com.helpme.tickets.services;
 
 import com.helpme.tickets.exceptions.CategoryNotFoundException;
+import com.helpme.tickets.exceptions.InvalidUpdateException;
 import com.helpme.tickets.exceptions.TicketNotFoundException;
 import com.helpme.tickets.model.Category;
 import com.helpme.tickets.model.TicketListItem;
 import com.helpme.tickets.model.dto.CreateTicketDTO;
 import com.helpme.tickets.model.Ticket;
 import com.helpme.tickets.model.TicketStatus;
+import com.helpme.tickets.model.dto.UpdateTicketDTO;
+import com.helpme.tickets.model.helper.TicketUpdater;
 import com.helpme.tickets.model.mapper.TicketMapper;
 import com.helpme.tickets.repositories.TicketRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class TicketsService {
 
@@ -33,21 +38,25 @@ public class TicketsService {
     @Autowired
     TicketMapper ticketMapper;
 
-    public Ticket create(CreateTicketDTO createTicketDTO) {
-        Optional<Category> categoryExists = this.categoriesService.findById(createTicketDTO.getCategoryId());
+    @Autowired
+    private List<TicketUpdater> updaters;
 
-        if(categoryExists.isEmpty()) {
-            throw new CategoryNotFoundException();
-        }
+    public Ticket create(CreateTicketDTO createTicketDTO) {
+        Category category = this.categoriesService.findById(createTicketDTO.getCategoryId()).orElseThrow(() -> {
+            log.warn("Category not found: {}", createTicketDTO.getCategoryId());
+            return new CategoryNotFoundException();
+        });
 
         Ticket newTicket = new Ticket();
         newTicket.setTitle(createTicketDTO.getTitle());
         newTicket.setDescription(createTicketDTO.getDescription());
         newTicket.setUserId(currentUserService.getUserId());
-        newTicket.setCategory(categoryExists.get());
+        newTicket.setCategory(category);
         newTicket.setTicketStatus(TicketStatus.OPEN);
 
-        return this.ticketsRepository.save(newTicket);
+        Ticket savedTicket = this.ticketsRepository.save(newTicket);
+        log.info("New ticket created: {}", savedTicket.getId());
+        return savedTicket;
     }
 
     public Page<TicketListItem> findAll(Pageable pageable, List<TicketStatus> statuses) {
@@ -63,9 +72,33 @@ public class TicketsService {
     }
 
     public Ticket findById(UUID id) {
-        return this.ticketsRepository.findById(id).orElseThrow(TicketNotFoundException::new);
+        return this.ticketsRepository.findById(id).orElseThrow(() -> {
+            log.warn("Ticket not found: {}", id);
+            return new TicketNotFoundException();
+        });
     }
 
+    public Ticket updateTicket(UpdateTicketDTO updateTicketDTO, UUID id) {
+        Ticket ticket = this.ticketsRepository.findById(id).orElseThrow(() -> {
+            log.warn("Ticket not found: {}", id);
+            return new TicketNotFoundException();
+        });
+        boolean updated = false;
 
+        for (TicketUpdater updater: updaters) {
+            if (updater.supports(updateTicketDTO)) {
+                updater.update(ticket, updateTicketDTO);
+                updated = true;
+                log.info("Ticket {} updated by {}", id, updater.getClass());
+            }
+        }
+
+        if (updated) {
+            return this.ticketsRepository.save(ticket);
+        }
+
+        log.warn("Invalid ticket update: {}", id);
+        throw new InvalidUpdateException();
+    }
 
 }

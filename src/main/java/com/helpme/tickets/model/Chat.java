@@ -20,10 +20,10 @@ public class Chat {
     @CreationTimestamp
     private Instant createdAt;
 
-    private String authorId;
+    private UUID authorId;
 
     @Column(columnDefinition = "TEXT")
-    private String description;
+    private String content;
 
     @ManyToOne
     @JoinColumn(name = "ticket_id", nullable = false)

@@ -32,9 +32,9 @@ public class Ticket {
     @Enumerated(EnumType.STRING)
     private TicketStatus ticketStatus;
 
-    private String userId;
+    private UUID userId;
 
-    private String supportId;
+    private UUID supportId;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)

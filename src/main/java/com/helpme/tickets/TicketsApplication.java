@@ -28,6 +28,7 @@ public class TicketsApplication {
 			System.setProperty("RABBITMQ_NOTIFICATION_QUEUE", dotenv.get("RABBITMQ_NOTIFICATION_QUEUE"));
 			System.setProperty("CORS_ALLOWED_ORIGINS", dotenv.get("CORS_ALLOWED_ORIGINS"));
 			System.setProperty("DATABASE_URL", dotenv.get("DATABASE_URL"));
+			System.setProperty("MOCKED", dotenv.get("MOCKED"));
 		}
 
 		String jdbcUrl = "jdbc:postgresql://" + System.getenv("HOST") + "/" + System.getenv("POSTGRES_DB");

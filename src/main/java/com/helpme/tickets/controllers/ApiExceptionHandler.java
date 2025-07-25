@@ -1,8 +1,6 @@
 package com.helpme.tickets.controllers;
 
-import com.helpme.tickets.exceptions.CategoryAlreadyExistsException;
-import com.helpme.tickets.exceptions.CategoryNotFoundException;
-import com.helpme.tickets.exceptions.TicketNotFoundException;
+import com.helpme.tickets.exceptions.*;
 import com.helpme.tickets.model.ServerError;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -110,6 +108,32 @@ public class ApiExceptionHandler {
                 .body(new ServerError(
                         ex.getMessage(),
                         HttpStatus.BAD_REQUEST.value(),
+                        request.getMethod(),
+                        request.getRequestURI(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(InvalidUpdateException.class)
+    public ResponseEntity<ServerError> handleInvalidUpdateException(InvalidUpdateException ex, HttpServletRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ServerError(
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value(),
+                        request.getMethod(),
+                        request.getRequestURI(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(FileUploadException.class)
+    public ResponseEntity<ServerError> handleFileUploadException(FileUploadException ex, HttpServletRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ServerError(
+                        ex.getMessage(),
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
                         request.getMethod(),
                         request.getRequestURI(),
                         Instant.now()

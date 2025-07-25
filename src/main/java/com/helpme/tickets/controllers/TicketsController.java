@@ -4,6 +4,7 @@ import com.helpme.tickets.model.TicketListItem;
 import com.helpme.tickets.model.dto.CreateTicketDTO;
 import com.helpme.tickets.model.Ticket;
 import com.helpme.tickets.model.TicketStatus;
+import com.helpme.tickets.model.dto.UpdateTicketDTO;
 import com.helpme.tickets.services.TicketsService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,12 @@ public class TicketsController {
         PageRequest pageRequest = PageRequest.of(page - 1, pageSize);
         Page<TicketListItem> pageable = ticketsService.findAll(pageRequest, status);
         return ResponseEntity.status(HttpStatus.OK).body(pageable);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Ticket> update(@PathVariable UUID id, @RequestBody UpdateTicketDTO dto) {
+        Ticket ticket = ticketsService.updateTicket(dto, id);
+        return ResponseEntity.status(HttpStatus.OK).body(ticket);
     }
 
 }
