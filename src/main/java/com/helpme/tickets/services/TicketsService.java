@@ -11,15 +11,18 @@ import com.helpme.tickets.model.TicketStatus;
 import com.helpme.tickets.model.dto.UpdateTicketDTO;
 import com.helpme.tickets.model.helper.TicketUpdater;
 import com.helpme.tickets.model.mapper.TicketMapper;
+import com.helpme.tickets.producers.FileChunkProducer;
 import com.helpme.tickets.repositories.TicketRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -39,6 +42,9 @@ public class TicketsService {
     TicketMapper ticketMapper;
 
     @Autowired
+    FileChunkProducer fileChunkProducer;
+
+    @Autowired
     private List<TicketUpdater> updaters;
 
     public Ticket create(CreateTicketDTO createTicketDTO) {
@@ -56,6 +62,35 @@ public class TicketsService {
 
         Ticket savedTicket = this.ticketsRepository.save(newTicket);
         log.info("New ticket created: {}", savedTicket.getId());
+        return savedTicket;
+    }
+
+    public Ticket create(CreateTicketDTO createTicketDTO, MultipartFile[] files) throws IOException {
+        Category category = this.categoriesService.findById(createTicketDTO.getCategoryId()).orElseThrow(() -> {
+            log.warn("Category not found: {}", createTicketDTO.getCategoryId());
+            return new CategoryNotFoundException();
+        });
+
+        Ticket newTicket = new Ticket();
+        newTicket.setTitle(createTicketDTO.getTitle());
+        newTicket.setDescription(createTicketDTO.getDescription());
+        newTicket.setUserId(currentUserService.getUserId());
+        newTicket.setCategory(category);
+        newTicket.setTicketStatus(TicketStatus.OPEN);
+
+        Ticket savedTicket = this.ticketsRepository.save(newTicket);
+        log.info("New ticket created: {}", savedTicket.getId());
+
+        for (MultipartFile file : files) {
+            UUID fileId = UUID.randomUUID();
+            String fileName = file.getOriginalFilename();
+            String contentType = file.getContentType();
+
+            // Split file into chunks
+            InputStream inputStream = file.getInputStream();
+            fileChunkProducer.sendInChunks(inputStream, fileId, fileName, contentType, savedTicket.getId());
+        }
+
         return savedTicket;
     }
 
